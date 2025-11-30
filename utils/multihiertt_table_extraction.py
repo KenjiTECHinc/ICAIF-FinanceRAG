@@ -66,7 +66,8 @@ class MultiHierttTableExtractor:
         rows = []
         for line in lines:
             parts = [col.strip() for col in line.split("|")[1:-1]]
-            rows.append(parts)
+            if parts != []:
+                rows.append(parts)
 
         # Detect "header metadata" rows — those where column 0 is empty
         meta_rows = [r for r in rows if r[0] == ""]
@@ -82,7 +83,6 @@ class MultiHierttTableExtractor:
 
         # Initialize header labels
         headers = []
-        column_info = meta_rows[1:]  # ignore first row if it's a title
 
         # Combine metadata rows by column index
         col_labels = []        
