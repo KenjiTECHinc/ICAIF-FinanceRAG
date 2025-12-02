@@ -1,12 +1,24 @@
+import nltk
 import logging
-from typing import Any, Callable, Dict, List, Literal, Optional
-
 import numpy as np
+
+from typing import Any, Callable, Dict, List, Literal, Optional
 from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
 
 from financerag.common import Lexical, Retrieval
+from rank_bm25 import BM25Okapi
 
 logger = logging.getLogger(__name__)
+
+# install nltk resources if not already present
+try:
+    nltk.data.find('tokenizers/punkt')
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('punkt')
+    nltk.download('stopwords')
 
 
 def tokenize_list(input_list: List[str]) -> List[List[str]]:
@@ -14,7 +26,7 @@ def tokenize_list(input_list: List[str]) -> List[List[str]]:
     Tokenizes a list of strings using the `nltk.word_tokenize` function.
 
     Args:
-        input_list (`List[str]`):
+        input_list (`List[str]`):   
             A list of input strings to be tokenized.
 
     Returns:
@@ -23,7 +35,57 @@ def tokenize_list(input_list: List[str]) -> List[List[str]]:
     """
     return list(map(word_tokenize, input_list))
 
+class BM25Tokenizer:
+    """A custom tokenizer that performs lowercasing, stopword removal, and stemming. A customized tokenizer compared to tokenize_list."""
+    
+    def __init__(self):
+        """
+        Initialize the tokenizer with NLTK's PorterStemmer and English stopwords.
+        """
+        self.stemmer = PorterStemmer()
+        self.stop_words = set(stopwords.words('english'))
+    
+    def __call__(self, input_list: List[str]) -> List[List[str]]:
+        """Tokenizes, cleans, and stems a list of documents or queries."""
+        tokenized_output = []
+        for text in input_list:
+            # 1. Lowercase and tokenize
+            tokens = word_tokenize(text.lower())
+            
+            # 2. Filter punctuation, stopwords, and apply stemming
+            processed_tokens = [
+                self.stemmer.stem(token) 
+                for token in tokens 
+                if token.isalnum() and token not in self.stop_words
+            ]
+            tokenized_output.append(processed_tokens)
+        return tokenized_output
 
+class RankBM25Model:
+    """
+    wrapper class for initializing a 'pretrained' bm25 reranker model using the corpus's tokenized documents.
+    ensures that the model adheres to the Lexical protocol.
+    """
+    def __init__(self, corpus_tokens: List[List[str]]):
+        """
+        Initializes the BM25 model with the provided tokenized corpus.
+
+        Args:
+            corpus_tokens (`List[List[str]]`):
+                A list of tokenized documents from the corpus.
+        """
+        self.bm25 = BM25Okapi(corpus_tokens)
+
+    def get_scores(self, query_tokens: List[str]) -> np.ndarray:
+        """
+        Computes BM25 scores for the given tokenized query against the corpus.
+
+        Args:
+            query_tokens (`List[str]`):
+                A list of tokens representing the query.
+        """
+        return self.bm25.get_scores(query_tokens)
+    
 class BM25Retriever(Retrieval):
     """
     A retrieval class that utilizes a lexical model (e.g., BM25) to search for the most relevant documents
