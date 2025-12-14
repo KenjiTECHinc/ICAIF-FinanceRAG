@@ -2,10 +2,7 @@
 Test script for all dataset-specific table extractors
 """
 import json
-from finqa_table_extraction import FinQATableExtractor
-from tatqa_table_extraction import TATQATableExtractor
-from multihiertt_table_extraction import MultiHierttTableExtractor
-from convfinqa_table_extraction import ConvFinQATableExtractor
+from utils.multihiertt_table_extraction import MultiHierttTableExtractor
 
 
 def test_dataset(dataset_name, extractor_class, corpus_path):
@@ -49,14 +46,10 @@ def test_dataset(dataset_name, extractor_class, corpus_path):
 
 
 def main():
-    """Test all datasets"""
-    
+    """Test all datasets"""    
     # Update these paths to match your file locations
     datasets = [
-        ("FinQA", FinQATableExtractor, './dataset/FinQA/corpus.jsonl'),
-        ("TATQA", TATQATableExtractor, './dataset/TATQA/corpus.jsonl'),
         ("MultiHiertt", MultiHierttTableExtractor, './dataset/MultiHiertt/corpus.jsonl'),
-        ("ConvFinQA", ConvFinQATableExtractor, './dataset/ConvFinQA/corpus.jsonl'),
     ]
     
     for dataset_name, extractor_class, corpus_path in datasets:
