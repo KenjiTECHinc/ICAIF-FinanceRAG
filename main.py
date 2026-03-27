@@ -374,7 +374,7 @@ def process_hybrid_task(task_name, faiss_retriever, reranker, top_k_rerank=10, t
         queries=queries_dict,
         results=fused_results,
         top_k=top_k_rerank, # Rerank only the desired final amount
-        batch_size=32
+        batch_size=16
     )
     
     os.makedirs("results", exist_ok=True)
